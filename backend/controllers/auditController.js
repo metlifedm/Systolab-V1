@@ -1,20 +1,23 @@
 const CoreAuditEngine = require('../services/audit/CoreAuditEngine');
+const ReportGenerator = require('../services/report/ReportGenerator');
+const ReportFormatter = require('../services/report/ReportFormatter');
 const AuditReport = require('../models/AuditReport');
+const AuditSignal = require('../models/AuditSignal');
 const logger = require('../utils/logger');
 
 class AuditController {
   /**
-   * Execute new audit
+   * Execute complete audit with interpretation and scoring
    */
   async executeAudit(req, res, next) {
     const startTime = Date.now();
     
     try {
-      const { validatedURL, validatedDomain } = req;
+      const { validatedURL, validatedDomain, validatedGBP } = req;
       
-      logger.info(`Audit requested for: ${validatedURL}`);
+      logger.info(`Full audit requested for: ${validatedURL}`);
       
-      // Execute Core Audit Engine
+      // Step 1: Execute Core Audit Engine
       const coreEngine = new CoreAuditEngine(validatedURL, validatedDomain);
       const auditResult = await coreEngine.execute();
       
@@ -28,12 +31,12 @@ class AuditController {
         });
       }
       
-      // Create initial audit report (without scoring yet - Step 3)
+      // Step 2: Create initial audit report
       const auditReport = new AuditReport({
         websiteUrl: validatedURL,
-        gbpLink: req.validatedGBP || null,
-        auditMode: 'website_only', // Will be updated in Step 3
-        executionState: 'partial',
+        gbpLink: validatedGBP || null,
+        auditMode: 'pending', // Will be updated by ReportGenerator
+        executionState: 'processing',
         executionDuration: auditResult.duration,
         crawlStats: auditResult.crawlStats,
         technicalNotes: auditResult.technicalNotes,
@@ -42,23 +45,40 @@ class AuditController {
       
       await auditReport.save();
       
-      // Save signals with audit reference
+      // Step 3: Save signals
       const signalIds = await coreEngine.saveSignals(auditReport._id);
       auditReport.signals = signalIds;
       await auditReport.save();
       
-      logger.info(`Audit ${auditReport._id} created successfully`);
+      // Step 4: Load signals for interpretation
+      const signals = await AuditSignal.find({ auditId: auditReport._id });
       
-      // Return preliminary response (full interpretation in Step 3)
+      // Step 5: Generate complete report with interpretation and scoring
+      const reportGenerator = new ReportGenerator(
+        auditReport._id,
+        validatedURL,
+        validatedGBP,
+        signals,
+        auditResult
+      );
+      
+      const reportResult = await reportGenerator.generate();
+      
+      if (!reportResult.success) {
+        throw new Error('Report generation failed');
+      }
+      
+      // Step 6: Format and return report
+      const formattedReport = ReportFormatter.formatForAPI(reportResult.report);
+      
+      logger.info(`Complete audit ${auditReport._id} finished in ${Date.now() - startTime}ms`);
+      
       res.json({
         state: 'success',
-        auditId: auditReport._id,
-        message: 'Core audit completed. Proceeding to interpretation.',
-        data: {
-          websiteUrl: validatedURL,
-          signalsExtracted: signalIds.length,
-          crawlStats: auditResult.crawlStats,
-          duration: Date.now() - startTime
+        data: formattedReport,
+        execution: {
+          totalDuration: Date.now() - startTime,
+          crawlDuration: auditResult.duration
         }
       });
       
@@ -89,9 +109,11 @@ class AuditController {
         });
       }
       
+      const formattedReport = ReportFormatter.formatForAPI(report);
+      
       res.json({
         state: 'success',
-        data: report
+        data: formattedReport
       });
       
     } catch (error) {
@@ -120,7 +142,7 @@ class AuditController {
       const reports = await AuditReport.find({ websiteUrl })
         .sort({ executionTimestamp: -1 })
         .limit(10)
-        .select('-signals -technicalNotes')
+        .select('-signals -technicalNotes -errors')
         .exec();
       
       res.json({
@@ -128,12 +150,62 @@ class AuditController {
         data: {
           websiteUrl,
           auditCount: reports.length,
-          audits: reports
+          audits: reports.map(report => ({
+            auditId: report._id,
+            executionTimestamp: report.executionTimestamp,
+            auditMode: report.auditMode,
+            overallScore: report.scores.overall.score,
+            overallLevel: report.scores.overall.level,
+            findingsCount: report.findings.length
+          }))
         }
       });
       
     } catch (error) {
       logger.error(`Get history error: ${error.message}`);
+      next(error);
+    }
+  }
+
+  /**
+   * Get findings grouped by category
+   */
+  async getFindingsByCategory(req, res, next) {
+    try {
+      const { auditId } = req.params;
+      
+      const report = await AuditReport.findById(auditId);
+      
+      if (!report) {
+        return res.status(404).json({
+          state: 'error',
+          error: {
+            message: 'Audit report not found',
+            code: 'NOT_FOUND'
+          }
+        });
+      }
+      
+      const grouped = {
+        website_health: [],
+        mobile_experience: [],
+        trust_presence: [],
+        visibility_structure: []
+      };
+      
+      report.findings.forEach(finding => {
+        if (grouped[finding.category]) {
+          grouped[finding.category].push(finding);
+        }
+      });
+      
+      res.json({
+        state: 'success',
+        data: grouped
+      });
+      
+    } catch (error) {
+      logger.error(`Get findings error: ${error.message}`);
       next(error);
     }
   }

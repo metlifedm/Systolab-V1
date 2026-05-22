@@ -6,7 +6,7 @@ const rateLimiter = require('../middleware/rateLimiter');
 
 /**
  * POST /api/audit/execute
- * Execute new website audit
+ * Execute new complete website audit
  */
 router.post('/execute', 
   rateLimiter,
@@ -16,10 +16,18 @@ router.post('/execute',
 
 /**
  * GET /api/audit/:auditId
- * Get audit report by ID
+ * Get complete audit report by ID
  */
 router.get('/:auditId', 
   auditController.getAuditReport
+);
+
+/**
+ * GET /api/audit/:auditId/findings
+ * Get findings grouped by category
+ */
+router.get('/:auditId/findings',
+  auditController.getFindingsByCategory
 );
 
 /**
