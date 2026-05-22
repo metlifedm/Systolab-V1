@@ -17,14 +17,14 @@ const auditReportSchema = new mongoose.Schema({
   // Execution Metadata
   auditMode: {
     type: String,
-    enum: ['website_only', 'with_gbp_context', 'website_derived_context'],
-    required: true
+    enum: ['pending', 'website_only', 'with_gbp_context', 'website_derived_context'],
+    default: 'pending'
   },
   
   executionState: {
     type: String,
-    enum: ['success', 'partial', 'error'],
-    required: true
+    enum: ['processing', 'success', 'partial', 'error'],
+    default: 'processing'
   },
   
   executionTimestamp: {
@@ -33,8 +33,8 @@ const auditReportSchema = new mongoose.Schema({
   },
   
   executionDuration: {
-    type: Number, // milliseconds
-    required: true
+    type: Number,
+    default: 0
   },
   
   // Crawl Statistics
@@ -121,8 +121,8 @@ const auditReportSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   }],
   
-  // Error Tracking
-  errors: [{
+  // Error Tracking - Renamed from 'errors' to 'executionErrors' to avoid reserved keyword
+  executionErrors: [{
     stage: String,
     error: String,
     timestamp: { type: Date, default: Date.now }

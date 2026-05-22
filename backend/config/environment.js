@@ -30,5 +30,12 @@ module.exports = {
     MAX_CRAWL_DEPTH: 2,
     MAX_RESPONSE_SIZE: 5 * 1024 * 1024, // 5MB
     MAX_URL_LENGTH: 2048
+  },
+  
+  // Timeout Settings (ADDED - This was missing)
+  TIMEOUTS: {
+    SINGLE_REQUEST: 10000,
+    TOTAL_AUDIT: 60000,
+    GBP_EXTRACTION: 8000
   }
 };

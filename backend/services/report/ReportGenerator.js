@@ -19,11 +19,11 @@ class ReportGenerator {
     try {
       logger.info(`Generating report for audit: ${this.auditId}`);
       
-      // Extract business context
+      // Extract business context - PASS crawlResult correctly
       const contextLayer = new BusinessContextLayer(
         this.websiteUrl,
         this.gbpLink,
-        this.crawlResult
+        this.crawlResult  // This should be the full crawlResult object with pages array
       );
       const contextResult = await contextLayer.extract();
       
@@ -71,12 +71,7 @@ class ReportGenerator {
       report.executionState = 'success';
       
       // Update business context
-      const businessContextLayer = new BusinessContextLayer(
-        this.websiteUrl,
-        this.gbpLink,
-        this.crawlResult
-      );
-      report.businessContext = businessContextLayer.getContextForReport();
+      report.businessContext = this.formatBusinessContext(contextResult);
       
       // Update scores
       report.scores = {
@@ -111,6 +106,50 @@ class ReportGenerator {
       logger.error(`Failed to update audit report: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Format business context for report
+   */
+  formatBusinessContext(contextResult) {
+    if (!contextResult.hasContext || !contextResult.context) {
+      return {
+        hasGBPData: false,
+        derivedFromWebsite: false
+      };
+    }
+
+    if (contextResult.mode === 'with_gbp_context') {
+      const ctx = contextResult.context;
+      return {
+        hasGBPData: true,
+        businessName: ctx.businessName || null,
+        businessCategory: ctx.category || null,
+        hasRating: ctx.hasRating || false,
+        hasReviews: ctx.hasReviews || false,
+        ratingValue: ctx.ratingValue || null,
+        reviewCount: ctx.reviewCount || null,
+        contactConsistency: null, // Future enhancement
+        derivedFromWebsite: false
+      };
+    }
+
+    if (contextResult.mode === 'website_derived_context') {
+      const ctx = contextResult.context;
+      return {
+        hasGBPData: false,
+        businessName: ctx.businessName || null,
+        businessCategory: ctx.category || null,
+        derivedFromWebsite: true,
+        organizationSchema: ctx.organizationSchema || null,
+        structuredContact: ctx.structuredContact || null
+      };
+    }
+
+    return {
+      hasGBPData: false,
+      derivedFromWebsite: false
+    };
   }
 }
 

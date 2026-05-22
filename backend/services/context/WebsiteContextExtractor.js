@@ -22,8 +22,18 @@ class WebsiteContextExtractor {
         socialProfiles: []
       };
 
+      // Check if crawlResult has pages array
+      if (!this.crawlResult || !this.crawlResult.pages || !Array.isArray(this.crawlResult.pages)) {
+        logger.warn('No crawl pages available for context extraction');
+        return { hasContext: false, data: null };
+      }
+
       // Extract from all crawled pages
       for (const page of this.crawlResult.pages) {
+        if (!page || !page.html) {
+          continue;
+        }
+
         // Extract from schema markup
         const schemaData = this.extractFromSchema(page.html);
         if (schemaData.businessName && !context.businessName) {
@@ -48,6 +58,10 @@ class WebsiteContextExtractor {
         context.businessName !== null || 
         context.structuredContact.email.length > 0 ||
         context.structuredContact.phone.length > 0;
+
+      if (hasContext) {
+        logger.info(`Website context extracted: Business name - ${context.businessName || 'N/A'}`);
+      }
 
       return {
         hasContext,
