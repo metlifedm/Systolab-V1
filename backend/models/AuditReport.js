@@ -53,17 +53,89 @@ const auditReportSchema = new mongoose.Schema({
   }],
   
   // Business Context
-  businessContext: {
-    hasGBPData: { type: Boolean, default: false },
-    businessName: String,
-    businessCategory: String,
-    hasRating: Boolean,
-    hasReviews: Boolean,
-    contactConsistency: Boolean,
-    derivedFromWebsite: { type: Boolean, default: false },
-    organizationSchema: Object,
-    structuredContact: Object
+ businessContext: {
+
+  // GBP FLAGS
+  hasGBPData: {
+    type: Boolean,
+    default: false
   },
+
+  derivedFromWebsite: {
+    type: Boolean,
+    default: false
+  },
+
+  // BUSINESS INFO
+  businessName: {
+    type: String,
+    default: null
+  },
+
+  businessCategory: {
+    type: String,
+    default: null
+  },
+
+  // RATINGS
+  hasRating: {
+    type: Boolean,
+    default: false
+  },
+
+  ratingValue: {
+    type: Number,
+    default: null
+  },
+
+  hasReviews: {
+    type: Boolean,
+    default: false
+  },
+
+  reviewCount: {
+    type: Number,
+    default: null
+  },
+
+  // CONTACT INFO
+  address: {
+    type: String,
+    default: null
+  },
+
+  phone: {
+    type: String,
+    default: null
+  },
+
+  website: {
+    type: String,
+    default: null
+  },
+
+  // PROFILE QUALITY
+  profileCompleteness: {
+    type: Number,
+    default: null
+  },
+
+  contactConsistency: {
+    type: Boolean,
+    default: null
+  },
+
+  // WEBSITE DERIVED
+  organizationSchema: {
+    type: Object,
+    default: null
+  },
+
+  structuredContact: {
+    type: Object,
+    default: null
+  }
+},
   
   // Category Scores
   scores: {

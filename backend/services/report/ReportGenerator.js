@@ -12,13 +12,33 @@ class ReportGenerator {
     this.crawlResult = crawlResult;
   }
 
+  calculateGBPCompleteness(ctx) {
+
+  const fields = [
+    ctx.businessName,
+    ctx.category,
+    ctx.ratingValue,
+    ctx.reviewCount,
+    ctx.address,
+    ctx.phone,
+    ctx.website
+  ];
+
+  const completed =
+    fields.filter(Boolean).length;
+
+  return Math.round(
+    (completed / fields.length) * 100
+  );
+}
+
   /**
    * Generate complete audit report
    */
   async generate() {
     try {
       logger.info(`Generating report for audit: ${this.auditId}`);
-      
+
       // Extract business context - PASS crawlResult correctly
       const contextLayer = new BusinessContextLayer(
         this.websiteUrl,
@@ -26,27 +46,27 @@ class ReportGenerator {
         this.crawlResult  // This should be the full crawlResult object with pages array
       );
       const contextResult = await contextLayer.extract();
-      
+
       // Run interpretation engine
       const interpretationEngine = new InterpretationEngine(
         this.signals,
         contextResult
       );
       const interpretation = await interpretationEngine.interpret();
-      
+
       // Update audit report with complete data
       const report = await this.updateAuditReport(
         contextResult,
         interpretation
       );
-      
+
       logger.info(`Report generation completed for audit: ${this.auditId}`);
-      
+
       return {
         success: true,
         report
       };
-      
+
     } catch (error) {
       logger.error(`Report generation failed: ${error.message}`);
       throw error;
@@ -59,20 +79,20 @@ class ReportGenerator {
   async updateAuditReport(contextResult, interpretation) {
     try {
       const report = await AuditReport.findById(this.auditId);
-      
+
       if (!report) {
         throw new Error('Audit report not found');
       }
-      
+
       // Update audit mode
       report.auditMode = contextResult.mode;
-      
+
       // Update execution state
       report.executionState = 'success';
-      
+
       // Update business context
       report.businessContext = this.formatBusinessContext(contextResult);
-      
+
       // Update scores
       report.scores = {
         websiteHealth: interpretation.scores.websitehealth,
@@ -81,13 +101,13 @@ class ReportGenerator {
         visibilityStructure: interpretation.scores.visibilitystructure,
         overall: interpretation.scores.overall
       };
-      
+
       // Update findings
       report.findings = interpretation.findings;
-      
+
       // Update summary
       report.summary = interpretation.summary;
-      
+
       // Add context insights as technical notes
       if (interpretation.contextInsights) {
         interpretation.contextInsights.forEach(insight => {
@@ -97,11 +117,11 @@ class ReportGenerator {
           });
         });
       }
-      
+
       await report.save();
-      
+
       return report;
-      
+
     } catch (error) {
       logger.error(`Failed to update audit report: ${error.message}`);
       throw error;
@@ -123,13 +143,25 @@ class ReportGenerator {
       const ctx = contextResult.context;
       return {
         hasGBPData: true,
+
         businessName: ctx.businessName || null,
         businessCategory: ctx.category || null,
+
         hasRating: ctx.hasRating || false,
-        hasReviews: ctx.hasReviews || false,
         ratingValue: ctx.ratingValue || null,
+
+        hasReviews: ctx.hasReviews || false,
         reviewCount: ctx.reviewCount || null,
-        contactConsistency: null, // Future enhancement
+
+        address: ctx.address || null,
+        phone: ctx.phone || null,
+        website: ctx.website || null,
+
+        profileCompleteness:
+          this.calculateGBPCompleteness(ctx),
+
+        contactConsistency: null,
+
         derivedFromWebsite: false
       };
     }

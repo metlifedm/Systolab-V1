@@ -7,103 +7,114 @@ import CategoryScores from '../components/report/CategoryScores';
 import FindingsList from '../components/report/FindingsList';
 import TransparencyNotice from '../components/report/TransparencyNotice';
 import BusinessContextCard from '../components/report/BusinessContextCard';
+import ExportButton from '../components/report/ExportButton';
 
 const ReportView = () => {
-    const { auditId } = useParams();
-    const navigate = useNavigate();
-    const [report, setReport] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const { auditId } = useParams();
+  const navigate = useNavigate();
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchReport = async () => {
-            try {
-                setLoading(true);
-                const response = await auditAPI.getAuditReport(auditId);
-
-                if (response.state === 'success') {
-                    setReport(response.data);
-                } else {
-                    setError(response.error?.message || 'Failed to load report');
-                }
-            } catch (err) {
-                setError(err.error?.message || 'Failed to load report');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (auditId) {
-            fetchReport();
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await auditAPI.getAuditReport(auditId);
+        
+        if (response.state === 'success') {
+          setReport(response.data);
+        } else {
+          setError(response.error?.message || 'Failed to load report');
         }
-    }, [auditId]);
-
-    const handleNewAudit = () => {
-        navigate('/');
+      } catch (err) {
+        setError(err.error?.message || 'Failed to load report');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (loading) {
-        return (
-            <div className="report-page">
-                <div className="container">
-                    <LoadingSpinner message="Loading audit report..." />
-                </div>
-            </div>
-        );
+    if (auditId) {
+      fetchReport();
     }
+  }, [auditId]);
 
-    if (error) {
-        return (
-            <div className="report-page">
-                <div className="container">
-                    <div className="error-message">
-                        <p className="error-title">Report Not Found</p>
-                        <p className="error-text">{error}</p>
-                        <button className="btn-primary" onClick={handleNewAudit}>
-                            Start New Audit
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+  const handleNewAudit = () => {
+    navigate('/');
+  };
 
-    if (!report) {
-        return null;
-    }
+  const handlePrint = () => {
+    window.print();
+  };
 
+  if (loading) {
     return (
-        <div className="report-page">
-            <div className="container">
-                <div className="report-actions">
-                    <button className="btn-secondary" onClick={handleNewAudit}>
-                        ← New Audit
-                    </button>
-                </div>
-
-                <ReportSummary report={report} />
-
-                {report.businessContext && (
-                    <BusinessContextCard businessContext={report.businessContext} />
-                )}
-
-                <CategoryScores scores={report.scores} />
-
-                <FindingsList findings={report.findings} />
-
-                <TransparencyNotice technicalNotes={report.technicalNotes} />
-
-                <div className="report-footer">
-                    <p className="footer-note">
-                        Audit ID: {report.auditId}
-                    </p>
-                    <button className="btn-primary" onClick={handleNewAudit}>
-                        Analyze Another Website
-                    </button>
-                </div>
-            </div>
+      <div className="report-page">
+        <div className="container">
+          <LoadingSpinner message="Loading audit report..." />
         </div>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="report-page">
+        <div className="container">
+          <div className="error-message">
+            <p className="error-title">Report Not Found</p>
+            <p className="error-text">{error}</p>
+            <button className="btn-primary" onClick={handleNewAudit}>
+              Start New Audit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return null;
+  }
+
+  return (
+    <div className="report-page">
+      <div className="container">
+        <div className="report-actions">
+          <button className="btn-secondary" onClick={handleNewAudit}>
+            ← New Audit
+          </button>
+          <div className="action-buttons">
+            <ExportButton report={report} />
+            <button className="btn-secondary" onClick={handlePrint}>
+              🖨️ Print Report
+            </button>
+          </div>
+        </div>
+
+        <ReportSummary report={report} />
+        
+        {report.businessContext && (
+          <BusinessContextCard businessContext={report.businessContext} />
+        )}
+        
+        <CategoryScores scores={report.scores} />
+        
+        <FindingsList findings={report.findings} />
+        
+        <TransparencyNotice technicalNotes={report.technicalNotes} />
+        
+        <div className="report-footer">
+          <p className="footer-note">
+            Audit ID: {report.auditId}
+          </p>
+          <button className="btn-primary" onClick={handleNewAudit}>
+            Analyze Another Website
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ReportView;
