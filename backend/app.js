@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('./config/environment');
+const errorHandler = require('./middleware/errorHandler');
+const auditRoutes = require('./routes/auditRoutes');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -38,6 +40,9 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API routes
+app.use('/api/audit', auditRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -48,5 +53,8 @@ app.use((req, res) => {
     }
   });
 });
+
+// Global error handler
+app.use(errorHandler);
 
 module.exports = app;
