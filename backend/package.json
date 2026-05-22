@@ -1,0 +1,34 @@
+{
+  "name": "systolab-backend",
+  "version": "1.0.0",
+  "description": "SYSTOLAB V1 - Operational Diagnostic Platform Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "jest --coverage",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "axios": "^1.5.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^6.10.0",
+    "validator": "^13.11.0",
+    "winston": "^3.10.0",
+    "robots-parser": "^3.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.4",
+    "eslint": "^8.49.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
