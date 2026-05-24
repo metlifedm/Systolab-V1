@@ -90,14 +90,14 @@ const URLInput = ({ onSubmit, loading }) => {
         </button>
       </form>
 
-      <div className="transparency-notice">
+      {/* <div className="transparency-notice">
         <p className="notice-title">⚠️ Technical Analysis Scope</p>
         <p className="notice-text">
           SYSTOLAB analyzes publicly accessible static HTML structure. Some modern websites 
           load content dynamically using JavaScript, which may affect signal detection and 
           interpretation accuracy.
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };
