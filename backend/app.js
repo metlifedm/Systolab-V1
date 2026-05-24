@@ -14,10 +14,15 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: config.CORS_ORIGIN,
-  credentials: true
+  origin: [
+    process.env.CORS_ORIGIN,
+    'http://localhost:5173',
+    'https://systolab-v1.onrender.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
