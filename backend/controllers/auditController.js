@@ -22,11 +22,13 @@ class AuditController {
       const auditResult = await coreEngine.execute();
 
       if (!auditResult.success) {
+        console.error('CORE AUDIT FAILURE:', auditResult);
+
         return res.status(500).json({
           state: 'error',
           error: {
             message: 'Core audit execution failed',
-            details: auditResult.errors
+            details: auditResult.errors || auditResult
           }
         });
       }
