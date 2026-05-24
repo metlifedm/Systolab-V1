@@ -70,14 +70,25 @@ class CoreCrawler {
 
       // puppeteer
       this.browser = await puppeteer.launch({
-        headless: "new",
+        headless: true,
 
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-blink-features=AutomationControlled'
-        ]
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-renderer-backgrounding',
+          '--disable-features=site-per-process',
+          '--disable-blink-features=AutomationControlled',
+          '--single-process',
+          '--no-zygote'
+        ],
+
+        executablePath:
+          process.env.PUPPETEER_EXECUTABLE_PATH || undefined
       });
 
       logger.info(
@@ -481,7 +492,7 @@ class CoreCrawler {
               );
             }
 
-          } catch {}
+          } catch { }
         }
       );
 
